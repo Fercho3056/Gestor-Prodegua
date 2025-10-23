@@ -1,24 +1,67 @@
 import 'package:flutter/material.dart';
 import 'rutas.dart';
+import 'servicios/base_datos.dart';
 
-void main() {
-  runApp(const ProdeguaApp());
+Future<void> crearAdminSiNoExiste() async {
+  final adminExistente =
+      await BaseDatos.obtenerUsuarioPorCorreo('admin@prodegua.com');
+
+  if (adminExistente == null) {
+    await BaseDatos.insertarUsuario({
+      'correo': 'admin@prodegua.com',
+      'contrasena': 'admin123',
+      'rol': 'admin',
+    });
+    print('✅ Usuario admin creado correctamente');
+  } else {
+    print('ℹ️ Usuario admin ya existe');
+  }
+}
+
+Future<void> crearTecnicoSiNoExiste() async {
+  final tecnicoExistente =
+      await BaseDatos.obtenerUsuarioPorCorreo('tecnico@prodegua.com');
+
+  if (tecnicoExistente == null) {
+    await BaseDatos.insertarUsuario({
+      'correo': 'tecnico@prodegua.com',
+      'contrasena': 'tec123',
+      'rol': 'tecnico',
+    });
+    print('✅ Usuario técnico creado correctamente');
+  } else {
+    print('ℹ️ Usuario técnico ya existe');
+  }
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializa la base de datos
+  await BaseDatos.database;
+
+  // Inserta el admin si no existe
+  await crearAdminSiNoExiste();
+
+  runApp(ProdeguaApp());
 }
 
 class ProdeguaApp extends StatelessWidget {
-  const ProdeguaApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Prodegua (modo local)',
-      initialRoute: '/login',
-      routes: rutas,
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.blueAccent,
+          foregroundColor: Colors.white,
+        ),
       ),
+      initialRoute: '/login',
+      routes: rutas,
     );
   }
 }

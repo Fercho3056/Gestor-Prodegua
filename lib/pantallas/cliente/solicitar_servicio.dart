@@ -2,41 +2,44 @@ import 'package:flutter/material.dart';
 import '../../servicios/base_datos.dart';
 
 class SolicitarServicio extends StatefulWidget {
-  const SolicitarServicio({Key? key}) : super(key: key);
+  final String? correoCliente; // ahora opcional
+
+  const SolicitarServicio({super.key, this.correoCliente});
 
   @override
   State<SolicitarServicio> createState() => _SolicitarServicioState();
 }
 
 class _SolicitarServicioState extends State<SolicitarServicio> {
+  final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _descripcionController = TextEditingController();
   bool _guardando = false;
 
   Future<void> _guardarSolicitud() async {
-    final nombre = _nombreController.text.trim();
-    final descripcion = _descripcionController.text.trim();
-
-    if (nombre.isEmpty || descripcion.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Por favor completa todos los campos")),
-      );
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _guardando = true);
 
+    final correoCliente = widget.correoCliente ?? "cliente@demo.com";
+
     try {
-      await BaseDatos.insertarServicio(nombre, descripcion, "pendiente");
+      await BaseDatos.insertarServicio(
+        _nombreController.text,
+        _descripcionController.text,
+        "pendiente",
+        correoCliente,
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ Solicitud enviada correctamente")),
+        const SnackBar(content: Text("✅ Solicitud enviada con éxito")),
       );
 
       _nombreController.clear();
       _descripcionController.clear();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ Error al guardar: $e")),
+        SnackBar(content: Text("❌ Error al guardar solicitud: $e")),
       );
     } finally {
       setState(() => _guardando = false);
@@ -46,76 +49,57 @@ class _SolicitarServicioState extends State<SolicitarServicio> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE3F2FD),
       appBar: AppBar(
-        title: const Text("Solicitar Servicio"),
+        title: const Text("Solicitar servicio"),
         backgroundColor: Colors.blueAccent,
-        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Card(
-          elevation: 6,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                const Icon(Icons.build, size: 80, color: Colors.blueAccent),
-                const SizedBox(height: 20),
-                const Text(
-                  "Formulario de Solicitud",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                "Detalles del servicio",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _nombreController,
+                decoration: const InputDecoration(
+                  labelText: "Nombre del servicio",
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 30),
-
-                // Nombre del servicio
-                TextField(
-                  controller: _nombreController,
-                  decoration: const InputDecoration(
-                    labelText: "Nombre del servicio",
-                    prefixIcon: Icon(Icons.text_fields),
-                    border: OutlineInputBorder(),
-                  ),
+                validator: (value) =>
+                    value!.isEmpty ? "Ingrese un nombre" : null,
+              ),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _descripcionController,
+                decoration: const InputDecoration(
+                  labelText: "Descripción del servicio",
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 20),
-
-                // Descripción
-                TextField(
-                  controller: _descripcionController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: "Descripción del problema o solicitud",
-                    prefixIcon: Icon(Icons.description),
-                    border: OutlineInputBorder(),
-                  ),
+                maxLines: 4,
+                validator: (value) =>
+                    value!.isEmpty ? "Ingrese una descripción" : null,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.send),
+                label: _guardando
+                    ? const CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2)
+                    : const Text("Enviar solicitud"),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: Colors.blueAccent,
                 ),
-                const SizedBox(height: 30),
-
-                // Botón para enviar
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _guardando ? null : _guardarSolicitud,
-                    icon: _guardando
-                        ? const CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2)
-                        : const Icon(Icons.send),
-                    label: Text(
-                      _guardando ? "Enviando..." : "Enviar Solicitud",
-                      style: const TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+                onPressed: _guardando ? null : _guardarSolicitud,
+              ),
+            ],
           ),
         ),
       ),

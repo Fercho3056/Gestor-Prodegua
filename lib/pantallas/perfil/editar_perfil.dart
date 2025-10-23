@@ -1,96 +1,66 @@
-// lib/pantallas/perfil/editar_perfil.dart
 import 'package:flutter/material.dart';
-import '../../servicios/autenticacion_servicio.dart';
-import '../../servicios/base_datos.dart';
+import 'package:proyecto_prodegua/servicios/base_datos.dart';
 
-class EditarPerfilPantalla extends StatefulWidget {
-  const EditarPerfilPantalla({Key? key}) : super(key: key);
+class EditarPerfil extends StatefulWidget {
+  final Map<String, dynamic> usuario;
+  const EditarPerfil({Key? key, required this.usuario}) : super(key: key);
 
   @override
-  State<EditarPerfilPantalla> createState() => _EditarPerfilPantallaState();
+  State<EditarPerfil> createState() => _EditarPerfilState();
 }
 
-class _EditarPerfilPantallaState extends State<EditarPerfilPantalla> {
-  final _correoController = TextEditingController();
-  final _contrasenaController = TextEditingController();
-  final AutenticacionServicio _auth = AutenticacionServicio();
-  Map<String, dynamic>? _usuario;
+class _EditarPerfilState extends State<EditarPerfil> {
+  final _correoCtrl = TextEditingController();
+  final _contrasenaCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _usuario = _auth.usuarioActual;
-    _correoController.text = _usuario?['correo'] ?? '';
+    _correoCtrl.text = widget.usuario['correo'];
+    _contrasenaCtrl.text = widget.usuario['contrasena'];
   }
 
-  Future<void> _guardar() async {
-    final correoNuevo = _correoController.text.trim();
-    final passNuevo = _contrasenaController.text.trim();
+  Future<void> _guardarCambios() async {
+    final db = await BaseDatos.database;
+    await db.update(
+      'usuarios',
+      {
+        'correo': _correoCtrl.text,
+        'contrasena': _contrasenaCtrl.text,
+      },
+      where: 'id = ?',
+      whereArgs: [widget.usuario['id']],
+    );
 
-    if (correoNuevo.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('El correo no puede quedar vacío')));
-      return;
-    }
-
-    // Simple: eliminamos el usuario viejo y creamos uno nuevo con mismo rol.
-    try {
-      final id = _usuario?['id'] as int?;
-      final rol = _usuario?['rol'] as String?;
-      if (id == null) throw 'Usuario no válido';
-
-      // eliminar antiguo e insertar nuevo (sencillo)
-      await BaseDatos.eliminarUsuario(id);
-      await BaseDatos.insertarUsuario(
-          correoNuevo,
-          passNuevo.isEmpty ? (_usuario?['contrasena'] ?? '') : passNuevo,
-          rol ?? 'cliente');
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Perfil actualizado')));
-      // Cerrar sesión para que reingrese con nuevo correo
-      await _auth.cerrarSesion();
-      Navigator.pushReplacementNamed(context, '/login');
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("✅ Cambios guardados exitosamente")),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Editar perfil'),
-        backgroundColor: Colors.blueAccent,
-      ),
+      appBar: AppBar(title: const Text("Editar perfil")),
       body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Card(
-          elevation: 6,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                TextField(
-                    controller: _correoController,
-                    decoration: const InputDecoration(labelText: 'Correo')),
-                const SizedBox(height: 12),
-                TextField(
-                    controller: _contrasenaController,
-                    decoration: const InputDecoration(
-                        labelText: 'Nueva contraseña (opcional)')),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                    onPressed: _guardar,
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent),
-                    child: const Text('Guardar cambios')),
-              ],
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _correoCtrl,
+              decoration:
+                  const InputDecoration(labelText: "Correo electrónico"),
             ),
-          ),
+            TextField(
+              controller: _contrasenaCtrl,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: "Contraseña"),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _guardarCambios,
+              child: const Text("Guardar cambios"),
+            ),
+          ],
         ),
       ),
     );

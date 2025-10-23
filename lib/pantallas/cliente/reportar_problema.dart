@@ -1,105 +1,62 @@
-// lib/pantallas/cliente/reportar_problema.dart
 import 'package:flutter/material.dart';
-import '../../servicios/servicio_servicio.dart';
-import '../../servicios/autenticacion_servicio.dart';
+import 'package:proyecto_prodegua/servicios/base_datos.dart';
 
-class ReportarProblemaPantalla extends StatefulWidget {
-  const ReportarProblemaPantalla({Key? key}) : super(key: key);
+class ReportarProblema extends StatefulWidget {
+  final String correoCliente;
+  const ReportarProblema({Key? key, required this.correoCliente})
+      : super(key: key);
 
   @override
-  State<ReportarProblemaPantalla> createState() =>
-      _ReportarProblemaPantallaState();
+  State<ReportarProblema> createState() => _ReportarProblemaState();
 }
 
-class _ReportarProblemaPantallaState extends State<ReportarProblemaPantalla> {
-  final _tituloController = TextEditingController();
-  final _descripcionController = TextEditingController();
-  final ServicioServicio _servicioServicio = ServicioServicio();
-  final AutenticacionServicio _auth = AutenticacionServicio();
-  bool _guardando = false;
+class _ReportarProblemaState extends State<ReportarProblema> {
+  final _tituloCtrl = TextEditingController();
+  final _descripcionCtrl = TextEditingController();
 
-  Future<void> _enviar() async {
-    final t = _tituloController.text.trim();
-    final d = _descripcionController.text.trim();
+  Future<void> _reportar() async {
+    if (_tituloCtrl.text.isEmpty || _descripcionCtrl.text.isEmpty) return;
 
-    if (t.isEmpty || d.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Completa todos los campos')));
-      return;
-    }
+    await BaseDatos.insertarServicio(
+      _tituloCtrl.text,
+      _descripcionCtrl.text,
+      'reportado',
+      widget.correoCliente,
+    );
 
-    final usuario = _auth.usuarioActual;
-    final correoCliente = usuario != null ? usuario['correo'] as String? : null;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("✅ Problema reportado con éxito")),
+    );
 
-    if (correoCliente == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No hay usuario logueado')));
-      return;
-    }
-
-    setState(() => _guardando = true);
-    try {
-      await _servicioServicio.crearSolicitud(t, d, correoCliente);
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Solicitud registrada ✅')));
-      _tituloController.clear();
-      _descripcionController.clear();
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
-    } finally {
-      setState(() => _guardando = false);
-    }
+    _tituloCtrl.clear();
+    _descripcionCtrl.clear();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reportar problema / Solicitar servicio'),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Card(
-          elevation: 6,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                const Icon(Icons.report_problem,
-                    size: 72, color: Colors.blueAccent),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _tituloController,
-                  decoration: const InputDecoration(
-                      labelText: 'Título del servicio',
-                      border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _descripcionController,
-                  maxLines: 6,
-                  decoration: const InputDecoration(
-                      labelText: 'Descripción', border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _guardando ? null : _enviar,
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent),
-                    child: _guardando
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Enviar solicitud'),
-                  ),
-                ),
-              ],
+      appBar: AppBar(title: const Text("Reportar un problema")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _tituloCtrl,
+              decoration:
+                  const InputDecoration(labelText: "Título del problema"),
             ),
-          ),
+            TextField(
+              controller: _descripcionCtrl,
+              maxLines: 3,
+              decoration:
+                  const InputDecoration(labelText: "Descripción detallada"),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _reportar,
+              child: const Text("Enviar reporte"),
+            ),
+          ],
         ),
       ),
     );
