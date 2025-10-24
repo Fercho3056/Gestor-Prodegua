@@ -12,15 +12,8 @@ class AutenticacionServicio {
         return null;
       }
 
-      // Crear mapa del nuevo usuario
-      final nuevoUsuario = {
-        'correo': correo,
-        'contrasena': contrasena,
-        'rol': rol,
-      };
-
-      // Insertar en la base de datos
-      final id = await BaseDatos.insertarUsuario(nuevoUsuario);
+      // Insertar usuario en la base de datos
+      final id = await BaseDatos.insertarUsuario(correo, contrasena, rol);
 
       // Retornar el usuario completo con el ID asignado
       final user = {

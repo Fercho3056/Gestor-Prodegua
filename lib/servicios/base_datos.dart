@@ -5,6 +5,9 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 class BaseDatos {
   static Database? _database;
 
+  // ==========================================================
+  // 🔹 Inicialización general de la base de datos
+  // ==========================================================
   static Future<Database> get database async {
     if (_database != null) return _database!;
     print('📦 Inicializando base de datos...');
@@ -23,41 +26,44 @@ class BaseDatos {
 
     print('📁 Ruta de la base: $path');
 
-    return await databaseFactory.openDatabase(path,
-        options: OpenDatabaseOptions(
-          version: 1,
-          onCreate: (db, version) async {
-            print('🆕 Creando tablas...');
-            await db.execute('''
-              CREATE TABLE usuarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                correo TEXT UNIQUE,
-                contrasena TEXT,
-                rol TEXT
-              )
-            ''');
+    return await databaseFactory.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 1,
+        onCreate: (db, version) async {
+          print('🆕 Creando tablas...');
+          await db.execute('''
+            CREATE TABLE usuarios (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              correo TEXT UNIQUE,
+              contrasena TEXT,
+              rol TEXT
+            )
+          ''');
 
-            await db.execute('''
-              CREATE TABLE servicios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre TEXT,
-                descripcion TEXT,
-                estado TEXT,
-                cliente TEXT,
-                tecnico TEXT,
-                fecha_creacion TEXT
-              )
-            ''');
+          await db.execute('''
+            CREATE TABLE servicios (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              nombre TEXT,
+              descripcion TEXT,
+              estado TEXT,
+              cliente TEXT,
+              tecnico TEXT,
+              fecha_creacion TEXT
+            )
+          ''');
 
-            print('✅ Tablas creadas correctamente');
-          },
-        ));
+          print('✅ Tablas creadas correctamente');
+        },
+      ),
+    );
   }
 
   // ==========================================================
   // 👤 MÉTODOS DE USUARIOS
   // ==========================================================
 
+  /// Obtiene un usuario por correo
   static Future<Map<String, dynamic>?> obtenerUsuarioPorCorreo(
       String correo) async {
     final db = await database;
@@ -66,6 +72,7 @@ class BaseDatos {
     return res.isNotEmpty ? res.first : null;
   }
 
+  /// Obtiene un usuario por correo y contraseña
   static Future<Map<String, dynamic>?> obtenerUsuarioPorCredenciales(
       String correo, String contrasena) async {
     final db = await database;
@@ -75,17 +82,28 @@ class BaseDatos {
     return res.isNotEmpty ? res.first : null;
   }
 
-  static Future<int> insertarUsuario(Map<String, dynamic> usuario) async {
+  /// Inserta un nuevo usuario (correo, contraseña, rol)
+  static Future<int> insertarUsuario(
+      String correo, String contrasena, String rol) async {
     final db = await database;
-    return await db.insert('usuarios', usuario,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    return await db.insert(
+      'usuarios',
+      {
+        'correo': correo,
+        'contrasena': contrasena,
+        'rol': rol,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
   }
 
+  /// Obtiene todos los usuarios
   static Future<List<Map<String, dynamic>>> obtenerTodosUsuarios() async {
     final db = await database;
     return await db.query('usuarios', orderBy: 'id DESC');
   }
 
+  /// Elimina un usuario por ID
   static Future<int> eliminarUsuario(int id) async {
     final db = await database;
     return await db.delete('usuarios', where: 'id = ?', whereArgs: [id]);
@@ -95,6 +113,7 @@ class BaseDatos {
   // 🧰 MÉTODOS DE SERVICIOS
   // ==========================================================
 
+  /// Inserta un nuevo servicio
   static Future<int> insertarServicio(
       String nombre, String descripcion, String estado, String clienteCorreo,
       {String tecnicoCorreo = ''}) async {
@@ -110,6 +129,7 @@ class BaseDatos {
     });
   }
 
+  /// Obtiene todos los servicios o los del cliente/técnico
   static Future<List<Map<String, dynamic>>> obtenerServicios(
       {String? cliente, String? tecnico}) async {
     final db = await database;
@@ -124,6 +144,7 @@ class BaseDatos {
     }
   }
 
+  /// Actualiza el estado de un servicio
   static Future<int> actualizarEstadoServicio(
       int id, String nuevoEstado) async {
     final db = await database;
@@ -131,6 +152,7 @@ class BaseDatos {
         where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Asigna un técnico a un servicio
   static Future<int> asignarTecnico(int id, String tecnicoCorreo) async {
     final db = await database;
     return await db.update(
@@ -138,6 +160,7 @@ class BaseDatos {
         where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Elimina un servicio por ID
   static Future<int> eliminarServicio(int id) async {
     final db = await database;
     return await db.delete('servicios', where: 'id = ?', whereArgs: [id]);

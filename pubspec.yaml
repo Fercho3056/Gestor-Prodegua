@@ -8,6 +8,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+  fl_chart: ^0.66.0
   sqflite_common_ffi: ^2.3.1
   path: ^1.9.0
 
