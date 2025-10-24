@@ -1,4 +1,14 @@
-import 'autenticacion_servicio.dart';
+// lib/servicios/servicio_global.dart
+class ServicioGlobal {
+  static Map<String, dynamic>? usuarioActual;
 
-// Instancia global para poder acceder a la autenticación desde cualquier parte
-final AutenticacionServicio servicioGlobal = AutenticacionServicio();
+  static void setUsuario(Map<String, dynamic>? usuario) {
+    usuarioActual = usuario;
+  }
+
+  static Map<String, dynamic>? getUsuario() => usuarioActual;
+
+  static String getCorreo() => usuarioActual?['correo']?.toString() ?? '';
+  static String getRol() => usuarioActual?['rol']?.toString() ?? 'cliente';
+  static int? getId() => usuarioActual?['id'] as int?;
+}
