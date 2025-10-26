@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../compartido/perfil_usuario.dart';
 
-class PerfilAdminPantalla extends StatelessWidget {
+class PerfilAdmin extends StatelessWidget {
+  final String correo;
+  const PerfilAdmin({super.key, required this.correo});
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Perfil del administrador")),
-      body: Center(child: Text("Pantalla de perfil del administrador")),
-    );
+    return PerfilUsuario(correo: correo, rol: 'admin');
   }
 }

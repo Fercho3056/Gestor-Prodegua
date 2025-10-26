@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:proyecto_prodegua/servicios/base_datos.dart';
 
 class EditarPerfil extends StatefulWidget {
@@ -17,7 +18,6 @@ class _EditarPerfilState extends State<EditarPerfil> {
   final TextEditingController _passCtrl = TextEditingController();
   String? _rol;
   File? _imagenPerfil;
-
   bool _guardando = false;
 
   @override
@@ -34,6 +34,33 @@ class _EditarPerfilState extends State<EditarPerfil> {
         _passCtrl.text = usuario['contrasena'] ?? '';
         _rol = usuario['rol'] ?? 'cliente';
       });
+
+      // Cargar imagen si existe guardada localmente
+      final dir = await getApplicationDocumentsDirectory();
+      final imagePath = '${dir.path}/${widget.correo}_avatar.png';
+      final file = File(imagePath);
+      if (await file.exists()) {
+        setState(() {
+          _imagenPerfil = file;
+        });
+      }
+    }
+  }
+
+  Future<void> _guardarImagenLocal(File imagen) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final newPath = '${dir.path}/${widget.correo}_avatar.png';
+    await imagen.copy(newPath);
+    print("📸 Imagen guardada localmente en: $newPath");
+  }
+
+  Future<void> _seleccionarImagen() async {
+    final picker = ImagePicker();
+    final XFile? imagen = await picker.pickImage(source: ImageSource.gallery);
+    if (imagen != null) {
+      final file = File(imagen.path);
+      await _guardarImagenLocal(file);
+      setState(() => _imagenPerfil = file);
     }
   }
 
@@ -74,16 +101,6 @@ class _EditarPerfilState extends State<EditarPerfil> {
     }
   }
 
-  Future<void> _seleccionarImagen() async {
-    final picker = ImagePicker();
-    final XFile? imagen = await picker.pickImage(source: ImageSource.gallery);
-    if (imagen != null) {
-      setState(() {
-        _imagenPerfil = File(imagen.path);
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,7 +116,6 @@ class _EditarPerfilState extends State<EditarPerfil> {
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-
                   // 🧑‍💼 Imagen de perfil
                   Stack(
                     alignment: Alignment.bottomRight,
@@ -123,10 +139,9 @@ class _EditarPerfilState extends State<EditarPerfil> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 25),
 
-                  // 📧 Campo correo
+                  // 📧 Correo
                   TextField(
                     controller: _correoCtrl,
                     decoration: const InputDecoration(
@@ -149,7 +164,7 @@ class _EditarPerfilState extends State<EditarPerfil> {
                   ),
                   const SizedBox(height: 15),
 
-                  // 🎭 Rol (solo lectura)
+                  // 🎭 Rol
                   InputDecorator(
                     decoration: const InputDecoration(
                       labelText: 'Rol de usuario',
@@ -161,7 +176,7 @@ class _EditarPerfilState extends State<EditarPerfil> {
 
                   const SizedBox(height: 30),
 
-                  // 💾 Botón guardar
+                  // 💾 Guardar cambios
                   ElevatedButton.icon(
                     onPressed: _guardarCambios,
                     icon: const Icon(Icons.save_alt),

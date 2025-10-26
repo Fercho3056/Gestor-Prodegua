@@ -26,4 +26,4 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/Avatar.png
+    - assets/images/Avatar.png
