@@ -11,6 +11,7 @@ import 'pantallas/admin/panel_admin.dart';
 import 'pantallas/admin/gestion_usuarios.dart';
 import 'pantallas/admin/gestion_servicios.dart';
 import 'pantallas/admin/usuarios_admin.dart';
+import 'pantallas/compartido/editar_perfil.dart';
 
 // 📦 Mapa de rutas de la app
 final Map<String, WidgetBuilder> rutas = {
@@ -30,4 +31,8 @@ final Map<String, WidgetBuilder> rutas = {
   '/gestion-usuarios': (context) => GestionUsuarios(),
   '/gestion-servicios': (context) => GestionServicios(),
   '/usuarios-admin': (context) => const UsuariosAdminPantalla(),
+
+  //editar perfil
+  '/editar-perfil': (context) =>
+      const EditarPerfil(correo: 'cliente@correo.com'),
 };

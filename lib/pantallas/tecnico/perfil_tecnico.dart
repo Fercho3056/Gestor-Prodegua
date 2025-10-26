@@ -1,7 +1,5 @@
-// lib/pantallas/tecnico/perfil_tecnico.dart
 import 'package:flutter/material.dart';
 import '../../servicios/base_datos.dart';
-import '../../servicios/servicio_global.dart';
 
 class PerfilTecnico extends StatefulWidget {
   const PerfilTecnico({super.key});
@@ -11,56 +9,186 @@ class PerfilTecnico extends StatefulWidget {
 }
 
 class _PerfilTecnicoState extends State<PerfilTecnico> {
-  List<Map<String, dynamic>> _servicios = [];
-  bool _cargando = true;
+  int totalServicios = 0;
+  int completados = 0;
+  int pendientes = 0;
+  List<Map<String, dynamic>> serviciosAsignados = [];
 
   @override
   void initState() {
     super.initState();
-    _cargar();
+    _cargarDatos();
   }
 
-  Future<void> _cargar() async {
-    setState(() => _cargando = true);
-    final correo = ServicioGlobal.getCorreo();
-    _servicios = await BaseDatos.obtenerServicios(tecnico: correo);
-    setState(() => _cargando = false);
+  Future<void> _cargarDatos() async {
+    // 🔧 Cambia este correo por el del técnico logueado si tienes sesión activa
+    const correoTecnico = 'tecnico@prodegua.com';
+    final servicios = await BaseDatos.obtenerServicios(tecnico: correoTecnico);
+
+    setState(() {
+      serviciosAsignados = servicios;
+      totalServicios = servicios.length;
+      completados = servicios.where((s) => s['estado'] == 'completado').length;
+      pendientes = servicios.where((s) => s['estado'] == 'pendiente').length;
+    });
   }
 
-  Future<void> _cambiarEstado(int id, String estado) async {
-    await BaseDatos.actualizarEstadoServicio(id, estado);
-    _cargar();
+  Future<void> _actualizarEstado(int id, String nuevoEstado) async {
+    await BaseDatos.actualizarEstadoServicio(id, nuevoEstado);
+    _cargarDatos();
+  }
+
+  Widget _crearCard(String titulo, String valor, IconData icono, Color color) {
+    return Expanded(
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Icon(icono, size: 40, color: color),
+              const SizedBox(height: 10),
+              Text(
+                titulo,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                valor,
+                style: TextStyle(
+                    fontSize: 22, color: color, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navegar(String ruta) {
+    Navigator.pushNamed(context, ruta);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Perfil Técnico')),
-      body: _cargando
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: _servicios.length,
-              itemBuilder: (context, i) {
-                final s = _servicios[i];
-                return Card(
-                  child: ListTile(
-                    title: Text(s['nombre'] ?? ''),
-                    subtitle: Text(
-                        'Cliente: ${s['cliente'] ?? ''}\nEstado: ${s['estado'] ?? ''}'),
-                    trailing: PopupMenuButton<String>(
-                      onSelected: (v) => _cambiarEstado(s['id'] as int, v),
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(
-                            value: 'en proceso', child: Text('En proceso')),
-                        const PopupMenuItem(
-                            value: 'completado', child: Text('Completado')),
-                      ],
-                    ),
+      appBar: AppBar(title: const Text('Panel del Técnico')),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.orangeAccent),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.engineering, size: 60, color: Colors.white),
+                  SizedBox(height: 10),
+                  Text(
+                    'Técnico Asignado',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
-                );
-              },
+                  Text(
+                    'tecnico@prodegua.com',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
             ),
+            ListTile(
+              leading: const Icon(Icons.list),
+              title: const Text('Servicios Asignados'),
+              onTap: _cargarDatos,
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text('Editar Perfil'),
+              onTap: () => _navegar('/editar-perfil'),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Cerrar Sesión'),
+              onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+            ),
+          ],
+        ),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _cargarDatos,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              const Text(
+                "🔧 Panel del Técnico",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+
+              // Estadísticas
+              Row(
+                children: [
+                  _crearCard("Servicios Totales", "$totalServicios",
+                      Icons.build, Colors.teal),
+                  _crearCard(
+                      "Pendientes", "$pendientes", Icons.pending, Colors.red),
+                  _crearCard("Completados", "$completados", Icons.check_circle,
+                      Colors.green),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 10),
+              const Text(
+                "🧰 Servicios Asignados",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 15),
+
+              // Lista de servicios
+              if (serviciosAsignados.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text("No tienes servicios asignados actualmente."),
+                )
+              else
+                Column(
+                  children: serviciosAsignados.map((servicio) {
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      child: ListTile(
+                        title: Text(servicio['nombre']),
+                        subtitle: Text(
+                          "Cliente: ${servicio['cliente']}\nEstado: ${servicio['estado']}",
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert),
+                          onSelected: (valor) {
+                            _actualizarEstado(servicio['id'], valor);
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'pendiente',
+                              child: Text('Marcar Pendiente'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'completado',
+                              child: Text('Marcar Completado'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

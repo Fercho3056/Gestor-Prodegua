@@ -37,8 +37,9 @@ class BaseDatos {
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               correo TEXT UNIQUE,
               contrasena TEXT,
-              rol TEXT
-            )
+              rol TEXT,
+              foto TEXT
+              )
           ''');
 
           await db.execute('''
