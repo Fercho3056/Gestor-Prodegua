@@ -53,6 +53,7 @@ class _PerfilUsuarioState extends State<PerfilUsuario> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
+            tooltip: 'Editar perfil',
             onPressed: () async {
               await Navigator.push(
                 context,
@@ -63,7 +64,18 @@ class _PerfilUsuarioState extends State<PerfilUsuario> {
               await _cargarUsuario();
               await _cargarImagen();
             },
-          )
+          ),
+          IconButton(
+            icon: const Icon(Icons.pie_chart),
+            tooltip: 'Ver estadísticas',
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/estadisticas',
+                arguments: {'correo': correo, 'rol': rol},
+              );
+            },
+          ),
         ],
       ),
       body: _usuario == null
@@ -104,7 +116,7 @@ class _PerfilUsuarioState extends State<PerfilUsuario> {
                   const Divider(thickness: 1.2),
                   const SizedBox(height: 10),
 
-                  // Sección de estadísticas
+                  // Sección de estadísticas rápidas
                   const Text(
                     "📊 Actividad reciente",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

@@ -13,7 +13,9 @@ import 'pantallas/admin/gestion_usuarios.dart';
 import 'pantallas/admin/gestion_servicios.dart';
 import 'pantallas/admin/usuarios_admin.dart';
 import 'pantallas/compartido/editar_perfil.dart';
+import 'pantallas/compartido/estadisticas.dart';
 
+// 📦 Mapa de rutas de la app
 final Map<String, WidgetBuilder> rutas = {
   '/login': (context) => LoginPantalla(),
   '/registro': (context) => RegistroPantalla(),
@@ -36,4 +38,8 @@ final Map<String, WidgetBuilder> rutas = {
   // 🔧 Editar perfil
   '/editar-perfil': (context) =>
       const EditarPerfil(correo: 'cliente@prodegua.com'),
+
+  // 📊 Nueva pantalla de estadísticas
+  '/estadisticas': (context) => const EstadisticasPantalla(
+      correo: 'usuario@prodegua.com', rol: 'cliente'),
 };
