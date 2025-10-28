@@ -28,13 +28,19 @@ Future<void> crearAdminYtecnico() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializa la base de datos multiplataforma
   await BaseDatos.database;
+
+  // Crea usuarios admin y técnico si no existen
   await crearAdminYtecnico();
 
-  runApp(ProdeguaApp());
+  runApp(const ProdeguaApp());
 }
 
 class ProdeguaApp extends StatelessWidget {
+  const ProdeguaApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

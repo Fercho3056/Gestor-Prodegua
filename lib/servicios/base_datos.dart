@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart'; // Para móviles
+import 'package:sqflite_common_ffi/sqflite_ffi.dart'; // Para escritorio
 
 class BaseDatos {
   static Database? _database;
@@ -11,52 +12,61 @@ class BaseDatos {
   static Future<Database> get database async {
     if (_database != null) return _database!;
     print('📦 Inicializando base de datos...');
+
+    // Inicialización multiplataforma
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    } else {
+      databaseFactory =
+          databaseFactory; // Para Android/iOS usa la fábrica normal
+    }
+
     _database = await _inicializar();
     return _database!;
   }
 
   static Future<Database> _inicializar() async {
-    if (Platform.isWindows || Platform.isLinux) {
-      sqfliteFfiInit();
-      databaseFactory = databaseFactoryFfi;
+    // Definir ruta según plataforma
+    String path;
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      path = join(Directory.current.path, 'prodegua.db'); // Desktop
+    } else {
+      path = join(await getDatabasesPath(), 'prodegua.db'); // Android/iOS
     }
-
-    final dbPath = await databaseFactory.getDatabasesPath();
-    final path = join(dbPath, 'prodegua.db');
 
     print('📁 Ruta de la base: $path');
 
-    return await databaseFactory.openDatabase(
+    // Abrir la base de datos
+    return await openDatabase(
       path,
-      options: OpenDatabaseOptions(
-        version: 1,
-        onCreate: (db, version) async {
-          print('🆕 Creando tablas...');
-          await db.execute('''
-            CREATE TABLE usuarios (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              correo TEXT UNIQUE,
-              contrasena TEXT,
-              rol TEXT,
-              foto TEXT
-              )
-          ''');
+      version: 1,
+      onCreate: (db, version) async {
+        print('🆕 Creando tablas...');
+        await db.execute('''
+          CREATE TABLE usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            correo TEXT UNIQUE,
+            contrasena TEXT,
+            rol TEXT,
+            foto TEXT
+          )
+        ''');
 
-          await db.execute('''
-            CREATE TABLE servicios (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              nombre TEXT,
-              descripcion TEXT,
-              estado TEXT,
-              cliente TEXT,
-              tecnico TEXT,
-              fecha_creacion TEXT
-            )
-          ''');
+        await db.execute('''
+          CREATE TABLE servicios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT,
+            descripcion TEXT,
+            estado TEXT,
+            cliente TEXT,
+            tecnico TEXT,
+            fecha_creacion TEXT
+          )
+        ''');
 
-          print('✅ Tablas creadas correctamente');
-        },
-      ),
+        print('✅ Tablas creadas correctamente');
+      },
     );
   }
 
